@@ -1,4 +1,6 @@
 .venv
 ms_coco_2017
-x_train
-x_test
+x_train.npy
+x_test.npy
+x_train_filenames.npy
+x_test_filenames.npy
