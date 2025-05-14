@@ -1,2 +1,4 @@
 .venv
 ms_coco_2017
+x_train
+x_test
