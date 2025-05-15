@@ -4,7 +4,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 import numpy as np
 
 # Charger les annotations directement en JSON
-annotations_path = "ms_coco_2017/annotations/captions_train2017.json"
+annotations_path = "dataset/ms_coco_2017/annotations/captions_train2017.json"
 
 with open(annotations_path, "r") as f:
     captions_data = json.load(f)
@@ -34,9 +34,9 @@ max_length = max(len(seq) for seq in sequences)
 sequences_padded = pad_sequences(sequences, maxlen=max_length, padding="post")
 
 # Sauvegarder le tokenizer et les séquences
-np.save("ms_coco_2017/tokenized_captions.npy", sequences_padded)
+np.save("dataset/ms_coco_2017/tokenized_captions.npy", sequences_padded)
 
-with open("ms_coco_2017/tokenizer.json", "w") as f:
+with open("dataset/ms_coco_2017/tokenizer.json", "w") as f:
     json.dump(tokenizer.to_json(), f)
 
 print("Captions tokenized and saved!")

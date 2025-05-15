@@ -60,6 +60,8 @@ def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128))
     ]
     
     sample_size = int(len(all_files) * sample_ratio)
+
+    random.seed(42)
     sampled_files = random.sample(all_files, sample_size)
     
     # Preallocate a NumPy array to store all processed images
@@ -117,3 +119,5 @@ def load_coco_dataset():
     x_test = np.load("dataset/x_test.npy").astype(np.float32) / 255.0
     y_test = 0
     return (x_train, y_train), (x_test, y_test)
+
+process_dataset()
