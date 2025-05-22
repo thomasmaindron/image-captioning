@@ -1,5 +1,6 @@
 import os
 import zipfile
+from dataset.utils.dataset_utils import process_dataset
 
 # Dossier de destination
 os.makedirs("dataset/ms_coco_2017", exist_ok=True)
@@ -35,4 +36,24 @@ for filename, (url, extracted_folder) in files.items():
         os.remove(zip_path)  # Supprimer le fichier ZIP après extraction
         print(f"Deleted {filename}")
 
-print("Dataset ready!")
+print("Entire MS COCO 2017 dataset downloaded!")
+
+# Process the dataset only if some .npy files are missing (and delete any partial files if needed)
+files = [
+    "dataset/x_train.npy",
+    "dataset/x_train_filenames.npy",
+    "dataset/x_test.npy",
+    "dataset/x_test_filenames.npy"
+]
+
+# Checks if all required files exist
+all_exist = all(os.path.exists(f) for f in files)
+
+if not all_exist:
+    # Deletes any that do exist (to avoid mismatched files)
+    for file in files:
+        try:
+            os.remove(file)
+        except OSError:
+            pass  # File didn't exist or couldn't be deleted — we ignore it
+    process_dataset()

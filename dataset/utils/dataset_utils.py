@@ -1,42 +1,11 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import tensorflow as tf
-import random
 import os
-
-def is_larger_than(image_path, size=(128, 128)):
-    """
-    Checks if an image is larger than or equal to the target size
-
-    Args:
-        image_path (str): Path to the image
-        target_size (tuple): Minimum required size of the image
-
-    Returns:
-        bool: True if the image is larger than or equal to the target size
-    """
-    image = tf.io.read_file(image_path)
-    image = tf.io.decode_jpeg(image, channels=3)
-    height, width = tf.shape(image)[0], tf.shape(image)[1]
-    return height >= size[0] and width >= size[1]
-
-def process_image(image_path, size=(128, 128)):
-    """
-    Processes a single image by resizing
-
-    Args:
-        image_path (str): Path to the image
-        size (tuple): Target size for resizing the image
-
-    Returns:
-        tf.Tensor: The processed image tensor
-    """
-    image = tf.io.read_file(image_path)
-    image = tf.io.decode_jpeg(image, channels=3) # Transform the image into a tensor
-    image = tf.cast(image, tf.float32) # Needed otherwise the resizing changes the color of the images
-    image = tf.image.resize(image, size)
-    image = tf.cast(image, tf.uint8)
-    return image
+import random
+import sys
+from image_utils import process_image, is_larger_than
+from caption_utils import prepare_caption_data, preprocess_captions
 
 def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128)):
     """
@@ -61,7 +30,7 @@ def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128))
     
     sample_size = int(len(all_files) * sample_ratio)
 
-    random.seed(42)
+    random.seed(42) # Ensures reproducible results
     sampled_files = random.sample(all_files, sample_size)
     
     # Preallocate a NumPy array to store all processed images
@@ -112,12 +81,30 @@ def load_coco_dataset():
         None
 
     Returns:
-        tuple: ((x_train, y_train), (x_test, y_test))
+        tuple: ((x_train, x_test), (y_train, y_test))
     """
+    # Load preprocessed images
     x_train = np.load("dataset/x_train.npy").astype(np.float32) / 255.0
-    y_train = 0
     x_test = np.load("dataset/x_test.npy").astype(np.float32) / 255.0
-    y_test = 0
-    return (x_train, y_train), (x_test, y_test)
 
-process_dataset()
+    # Load associated filenames
+    train_filenames = np.load("dataset/x_train_filenames.npy")
+    test_filenames = np.load("dataset/x_test_filenames.npy")
+
+    print(test_filenames)
+
+    # Path to the annotations
+    train_annotations = "dataset/ms_coco_2017/annotations/captions_train2017.json"
+    test_annotations = "dataset/ms_coco_2017/annotations/captions_val2017.json"
+    
+    # Préparer les captions en utilisant caption_utils
+    y_train, y_test = prepare_caption_data(
+        train_filenames, test_filenames, 
+        train_annotations, test_annotations
+    )
+
+    # Add <start> and <end> tokens to captions
+    y_train = preprocess_captions(y_train) 
+    y_test = preprocess_captions(y_test)
+    
+    return (x_train, x_test), (y_train, y_test)
