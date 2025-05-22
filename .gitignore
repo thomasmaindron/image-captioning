@@ -4,3 +4,4 @@ x_train.npy
 x_test.npy
 x_train_filenames.npy
 x_test_filenames.npy
+__pycache__
