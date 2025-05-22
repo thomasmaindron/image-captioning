@@ -15,15 +15,16 @@ all_captions = []
 
 for ann in captions_data["annotations"]:
     image_id = str(ann["image_id"])
-    caption = ann["caption"]
+    caption = ann["caption"].strip()
+    caption = "<start> " + caption + " <end>" #ajout des tokens <start> et <end>
 
     if image_id not in image_captions:
         image_captions[image_id] = []
     image_captions[image_id].append(caption)
     all_captions.append(caption)
-
+print(all_captions[:10]) #visualiser all_captions
 # Tokenisation
-tokenizer = Tokenizer(num_words=10000, oov_token="<unk>")
+tokenizer = Tokenizer(num_words=10000, oov_token="<unk>", filters='!"#$%&()*+,-./:;=?@[\\]^_`{|}~\t\n')
 tokenizer.fit_on_texts(all_captions)
 
 # Convertir les captions en séquences
@@ -40,3 +41,10 @@ with open("dataset/ms_coco_2017/tokenizer.json", "w") as f:
     json.dump(tokenizer.to_json(), f)
 
 print("Captions tokenized and saved!")
+
+# print("<start>" in tokenizer.word_index)  # True si <start> est bien présent
+# print("<end>" in tokenizer.word_index)    # True si <end> est bien présent
+
+# # Pour voir les indices associés
+# print("Index de <start>:", tokenizer.word_index.get("<start>"))
+# print("Index de <end>:", tokenizer.word_index.get("<end>"))

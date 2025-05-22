@@ -62,6 +62,7 @@ def decoder_model(vocab_size, embedding_size, max_caption_len):
     
     return model
 
+
 img_path = r".\dataset\ms_coco_2017\test2017\000000000001.jpg"
 encoder = encoder_model(embedding_size)
 decoder = decoder_model(vocab_size, embedding_size, max_caption_len) 
@@ -79,7 +80,7 @@ def ind_to_word(integer, tokenizer):
 def caption_generation(image_path, tokenizer, encoder, decoder, max_length=max_caption_len):
         image = preprocess_image(image_path)
         features = encoder(image)
-        text = "start"
+        text = "<start>"
         for i in range(max_length):
             sequence=tokenizer.texts_to_sequences([text])[0]
             sequence=pad_sequences([sequence], maxlen=max_length)
@@ -89,11 +90,39 @@ def caption_generation(image_path, tokenizer, encoder, decoder, max_length=max_c
             if word is None:
                 break
             text += " " + word
-            if word == "end":
+            if word == "<end>":
                 break
         return text
 
-
-
-
+#Entrainement du modèle
+def train_model(encoder, decoder, dataset, epochs=10):
+    for epoch in range(epochs):
+        print(f"Epoch {epoch+1}/{epochs}")
+        for batch in dataset:
+            images, captions = batch
+            with tf.GradientTape() as tape:
+                features = encoder(images)
+                predictions = decoder([features, captions])
+                loss = tf.keras.losses.sparse_categorical_crossentropy(captions[:, 1:], predictions[:, :-1], from_logits=True)
+                loss = tf.reduce_mean(loss)
+            gradients = tape.gradient(loss, decoder.trainable_variables)
+            decoder.optimizer.apply_gradients(zip(gradients, decoder.trainable_variables))
+        print(f"Loss: {loss.numpy()}")
+# Sauvegarde des poids du modèle
+def save_models_weights(encoder, decoder):
+    encoder.save_weights(r".\dataset\ms_coco_2017\encoder_weights.h5")
+    decoder.save_weights(r".\dataset\ms_coco_2017\decoder_weights.h5")
+def main():
+    # Charger le modèle
+    encoder = encoder_model(embedding_size)
+    decoder = decoder_model(vocab_size, embedding_size, max_caption_len)
+    
+    # Charger les poids du modèle
+    encoder.load_weights(r".\dataset\ms_coco_2017\encoder_weights.h5")
+    decoder.load_weights(r".\dataset\ms_coco_2017\decoder_weights.h5")
+    
+    # Générer une légende pour une image
+    image_path = r".\dataset\ms_coco_2017\test2017\000000000001.jpg"
+    caption = caption_generation(image_path, tokenizer, encoder, decoder)
+    print("Generated Caption:", caption)
 
