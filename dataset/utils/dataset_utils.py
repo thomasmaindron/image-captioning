@@ -106,6 +106,12 @@ def load_coco_dataset():
     # Add <start> and <end> tokens to captions
     y_train = preprocess_captions(y_train) 
     y_test = preprocess_captions(y_test)
+
+    # Convert output to numpy arrays
+    x_train = np.array(x_train)
+    x_test = np.array(x_test)
+    y_train = np.array(y_train)
+    y_test = np.array(y_test)
     
     return (x_train, x_test), (y_train, y_test)
 

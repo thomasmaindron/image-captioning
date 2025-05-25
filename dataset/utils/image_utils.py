@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
-def is_larger_than(image_path, size=( 224,  224)):
+def is_larger_than(image_path, size=(224, 224)):
     """
     Checks if an image is larger than or equal to the target size
 
@@ -18,7 +18,7 @@ def is_larger_than(image_path, size=( 224,  224)):
     height, width = tf.shape(image)[0], tf.shape(image)[1]
     return height >= size[0] and width >= size[1]
 
-def preprocess_image(image_path, size=(224,  224)):
+def preprocess_image(image_path, size=(224, 224)):
     """
     Preprocesses a single image by resizing
 
