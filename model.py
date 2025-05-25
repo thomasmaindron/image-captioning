@@ -4,125 +4,92 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.text import Tokenizer, tokenizer_from_json
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import json
-embedding_size = 256
-units = 512
-vocab_size = 10000 #10 000 mots de vocabulaire différents
-max_caption_len = 50
+from dataset.utils.image_utils import prepare_image_for_model
 
-# CHARGEMENT DU TOKENIZER
-with open(r".\dataset\ms_coco_2017\tokenizer.json") as f:
-    tokenizer_data = json.load(f)
-    tokenizer = tokenizer_from_json(tokenizer_data)
+class ImageCaptioning:
+    def __init(self, embedding_size=256, units=512, vocab_size=10000, max_caption_len=50):
+        self.embedding_size = embedding_size
+        self.units = units
+        self.vocab_size = vocab_size
+        self.max_caption_len = max_caption_len
 
-def preprocess_image(img_path):
-    image = tf.io.read_file(img_path)
-    image = tf.io.decode_jpeg(image, channels=3)
-    image = tf.image.resize(image, [224, 224])
-    image = image / 255.0
-    image = tf.expand_dims(image, 0)
-    return image
+        
+        with open(r".\dataset\ms_coco_2017\tokenizer.json") as f:
+            tokenizer_data = json.load(f)
+            self.tokenizer = tokenizer_from_json(tokenizer_data)
 
-def encoder_model(embedding_size):
-    # Create the ResNet50 as backbone
-    backbone = tf.keras.applications.ResNet50(
+        
+        self.encoder = self.encoder_model()
+        self.decoder = self.decoder_model()
+
+    def encoder_model(self):
+        #Create the ResNet50 as backbone
+        backbone = tf.keras.applications.ResNet50(
         weights='imagenet',
         include_top=False,
         input_shape=(224, 224, 3)
-    )
-    #freeze the weight of the backbone
-    for layer in backbone.layers:
-        layer.trainable = False
-    model = tf.keras.Sequential([
+        )
+        #freeze the weight of the backbone in order to not change them during training
+        for layer in backbone.layers:
+            layer.trainable = False
+        model = tf.keras.Sequential([
         tf.keras.layers.InputLayer(shape=(224, 224, 3)),
         backbone,
         tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(embedding_size, activation='relu')
-    ])
-    return model
-
-def decoder_model(vocab_size, embedding_size, max_caption_len):
-    # Entrée pour les caractéristiques de l'image
-    inputs1 = tf.keras.layers.Input(shape=(embedding_size,))
-    fc_input = tf.keras.layers.Dropout(0.5)(inputs1)
-    fc_input = tf.keras.layers.Dense(units, activation='relu')(fc_input)
+        tf.keras.layers.Dense(self.embedding_size, activation='relu')
+        ])
+        return model
+    def decoder_model(self):
+        #Entrée pour les caractéristiques de l'image
+        inputs1 = tf.keras.layers.Input(shape=(self.embedding_size,))
+        fc_input = tf.keras.layers.Dropout(0.5)(inputs1)
+        fc_input = tf.keras.layers.Dense(self.units, activation='relu')(fc_input)
+        
+        # Entrée pour la séquence de mots
+        inputs2 = tf.keras.layers.Input(shape=(self.max_caption_len,))
+        LSTM_input = tf.keras.layers.Embedding(self.vocab_size, self.embedding_size, mask_zero=True)(inputs2)
+        LSTM_input = tf.keras.layers.LSTM(self.units, return_sequences=True)(LSTM_input)
+        LSTM_input = tf.keras.layers.LSTM(self.units)(LSTM_input)
+        # Fusion des deux branches
+        decoder = tf.keras.layers.add([fc_input, LSTM_input])
+        decoder = tf.keras.layers.Dense(256, activation='relu')(decoder)
+        outputs = tf.keras.layers.Dense(self.vocab_size, activation='softmax')(decoder)
+        # Construction du modèle complet
+        model = tf.keras.Model(inputs=[inputs1, inputs2], outputs=outputs)
+        model.compile(loss='categorical_crossentropy', optimizer='adam')
+        return model
     
-    # Entrée pour la séquence de mots
-    inputs2 = tf.keras.layers.Input(shape=(max_caption_len,))
-    LSTM_input = tf.keras.layers.Embedding(vocab_size, embedding_size, mask_zero=True)(inputs2)
-    LSTM_input = tf.keras.layers.LSTM(units)(LSTM_input)
     
-    # Fusion des deux branches
-    decoder = tf.keras.layers.add([fc_input, LSTM_input])
-    decoder = tf.keras.layers.Dense(256, activation='relu')(decoder)
-    outputs = tf.keras.layers.Dense(vocab_size, activation='softmax')(decoder)
     
-    # Construction du modèle complet
-    model = tf.keras.Model(inputs=[inputs1, inputs2], outputs=outputs)
-    model.compile(loss='categorical_crossentropy', optimizer='adam')
-    
-    return model
-
-
-img_path = r".\dataset\ms_coco_2017\test2017\000000000001.jpg"
-encoder = encoder_model(embedding_size)
-decoder = decoder_model(vocab_size, embedding_size, max_caption_len) 
-# # Prétraitement de l'image et extraction des caractéristiques
-# image = preprocess_image(img_path)
-# vector = encoder(image)
-# decoder = decoder_model()  
-# encoder.summary()
-# decoder.summary()
-def ind_to_word(integer, tokenizer):
-    for word, index in tokenizer: # ou tokenizer.word_index.items() à voir
-        if index == integer:
-            return word
-    return None
-def caption_generation(image_path, tokenizer, encoder, decoder, max_length=max_caption_len):
-        image = preprocess_image(image_path)
-        features = encoder(image)
+    def test_caption_generation(self, image_path):
+        image = prepare_image_for_model(image_path)
+        features = self.encoder(image)
         text = "<start>"
-        for i in range(max_length):
-            sequence=tokenizer.texts_to_sequences([text])[0]
-            sequence=pad_sequences([sequence], maxlen=max_length)
-            y_pred=decoder.predict([features, sequence])
+        for i in range(self.max_caption_len):
+            sequence=self.tokenizer.texts_to_sequences([text])[0]
+            sequence=pad_sequences([sequence], maxlen=self.max_caption_len)
+            y_pred=self.decoder.predict([features, sequence])
             ind_pred = np.argmax(y_pred)
-            word = ind_to_word(ind_pred, tokenizer)
+            word = self.tokenizer.index_word.get(ind_pred)
             if word is None:
                 break
             text += " " + word
             if word == "<end>":
                 break
         return text
-
-#Entrainement du modèle
-def train_model(encoder, decoder, dataset, epochs=10):
-    for epoch in range(epochs):
-        print(f"Epoch {epoch+1}/{epochs}")
-        for batch in dataset:
-            images, captions = batch
-            with tf.GradientTape() as tape:
-                features = encoder(images)
-                predictions = decoder([features, captions])
-                loss = tf.keras.losses.sparse_categorical_crossentropy(captions[:, 1:], predictions[:, :-1], from_logits=True)
-                loss = tf.reduce_mean(loss)
-            gradients = tape.gradient(loss, decoder.trainable_variables)
-            decoder.optimizer.apply_gradients(zip(gradients, decoder.trainable_variables))
-        print(f"Loss: {loss.numpy()}")
-# Sauvegarde des poids du modèle
-def save_models_weights(encoder, decoder):
-    encoder.save_weights(r".\dataset\ms_coco_2017\encoder_weights.h5")
-    decoder.save_weights(r".\dataset\ms_coco_2017\decoder_weights.h5")
-def main():
-    # Charger le modèle
-    encoder = encoder_model(embedding_size)
-    decoder = decoder_model(vocab_size, embedding_size, max_caption_len)
     
-    # Charger les poids du modèle
-    encoder.load_weights(r".\dataset\ms_coco_2017\encoder_weights.h5")
-    decoder.load_weights(r".\dataset\ms_coco_2017\decoder_weights.h5")
-    
-    # Générer une légende pour une image
-    image_path = r".\dataset\ms_coco_2017\test2017\000000000001.jpg"
-    caption = caption_generation(image_path, tokenizer, encoder, decoder)
-    print("Generated Caption:", caption)
-
+    def caption_generation(self, image):
+        features = self.encoder(image)
+        text = "<start>"
+        for i in range(self.max_caption_len):
+            sequence=self.tokenizer.texts_to_sequences([text])[0]
+            sequence=pad_sequences([sequence], maxlen=self.max_caption_len)
+            y_pred=self.decoder.predict([features, sequence])
+            ind_pred = np.argmax(y_pred)
+            word = self.tokenizer.index_word.get(ind_pred)
+            if word is None:
+                break
+            text += " " + word
+            if word == "<end>":
+                break
+        return text

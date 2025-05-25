@@ -4,12 +4,12 @@ import tensorflow as tf
 import os
 import random
 import sys
-from image_utils import process_image, is_larger_than
-from caption_utils import prepare_caption_data, preprocess_captions
+from dataset.utils.image_utils import preprocess_image, is_larger_than
+from dataset.utils.caption_utils import prepare_caption_data, preprocess_captions
 
-def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128)):
+def preprocess_folder(input_folder, output_file, sample_ratio=0.1, size=( 224,  224)):
     """
-    Processes a random sample of images from a folder and saves them as a NumPy array
+    Preprocesses a random sample of images from a folder and saves them as a NumPy array
 
     Args:
         input_folder (str): Path to the folder containing images
@@ -33,7 +33,7 @@ def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128))
     random.seed(42) # Ensures reproducible results
     sampled_files = random.sample(all_files, sample_size)
     
-    # Preallocate a NumPy array to store all processed images
+    # Preallocate a NumPy array to store all preprocessed images
     images_array = np.zeros((sample_size, size[0], size[1], 3), dtype=np.uint8)
     
     # Store filenames for reference
@@ -41,7 +41,7 @@ def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128))
     
     for i, image_path in enumerate(sampled_files):
         try:
-            image = process_image(image_path)
+            image = preprocess_image(image_path)
             images_array[i] = image
             filenames.append(os.path.basename(image_path))
             
@@ -50,9 +50,9 @@ def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128))
                 print(f"Processed {i + 1}/{sample_size} images")
                 
         except Exception as e:
-            print(f"Error processing {image_path}: {e}")
+            print(f"Error preprocessing {image_path}: {e}")
     
-    # Save the processed images to a NumPy file
+    # Save the preprocessed images to a NumPy file
     np.save(output_file, images_array)
     
     # Save the list of filenames
@@ -60,9 +60,9 @@ def process_folder(input_folder, output_file, sample_ratio=0.2, size=(128, 128))
     
     print(f"Processed and saved {len(images_array)} images to {output_file}")
 
-def process_dataset():
+def preprocess_dataset():
     """
-    Processes a sample of images from the MS COCO 2017 train and test folders
+    Preprocesses a sample of images from the MS COCO 2017 train and test folders
     
     Args:
         None
@@ -70,8 +70,8 @@ def process_dataset():
     Returns:
         None
     """
-    process_folder("dataset/ms_coco_2017/train2017", "dataset/x_train.npy")
-    process_folder("dataset/ms_coco_2017/test2017", "dataset/x_test.npy")
+    preprocess_folder("dataset/ms_coco_2017/train2017", "dataset/x_train.npy")
+    preprocess_folder("dataset/ms_coco_2017/test2017", "dataset/x_test.npy")
 
 def load_coco_dataset():
     """
@@ -108,3 +108,5 @@ def load_coco_dataset():
     y_test = preprocess_captions(y_test)
     
     return (x_train, x_test), (y_train, y_test)
+
+
