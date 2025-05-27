@@ -1,15 +1,53 @@
-from dataset.utils.dataset_utils import load_coco_dataset
-from dataset.utils.caption_utils import prepare_caption_data, preprocess_captions
-from model import ImageCaptioning
 import numpy as np
+from model import ImageCaptioning
+from dataset.utils.training_utils import CocoDataGenerator
+from dataset.utils.dataset_utils import load_coco_dataset
+from dataset.utils.caption_utils import load_tokenizer, create_tokenizer
+import tensorflow as tf
+def generator_wrapper(generator):
 
+    for x_batch, y_batch in generator:
+        decoder_input = y_batch[:, :-1]
+        decoder_target = y_batch[:, 1:]
+        yield [x_batch, decoder_input], decoder_target
+def caption_generation(model, image):
+        features = model.encoder(image)
+        text = "<start>"
+        for i in range(model.max_caption_len):
+            sequence=model.tokenizer.texts_to_sequences([text])[0]
+            sequence=tf.keras.preprocessing.sequence.pad_sequences([sequence], maxlen=model.max_caption_len)
+            y_pred=model.decoder.predict([features, sequence])
+            ind_pred = np.argmax(y_pred)
+            word = model.tokenizer.index_word.get(ind_pred)
+            if word is None:
+                break
+            text += " " + word
+            if word == "<end>":
+                break
+        return text
+# 1. Charger les données prétraitées
 (x_train, x_test), (y_train, y_test) = load_coco_dataset()
-print(f"Train data shape: {len(x_train)}, {len(y_train)}")
-print("x_train: ",x_train[0])
-print("y_train: ",y_train[0])
-model= ImageCaptioning()
-model.encoder.summary()
-model.decoder.summary()
 
-# entrainement
-model.decoder.fit([x_train, y_train], y_train, epochs=10, batch_size=32)
+# 2. Charger le tokenizer
+# tokenizer = load_tokenizer("dataset/ms_coco_2017/tokenizer.json")
+tokenizer = create_tokenizer(y_train)
+# 3. Créer le modèle
+model_wrapper = ImageCaptioning().decoder_model
+model = model_wrapper.decoder  # Tu entraînes seulement le décodeur ici (le encodeur est gelé)
+
+# 4. Créer les générateurs de données
+train_gen = CocoDataGenerator(x_train, y_train, tokenizer, batch_size=32)
+test_gen = CocoDataGenerator(x_test, y_test, tokenizer, batch_size=32)
+
+# 5. Entraîner le modèle
+model.fit(
+    generator_wrapper(train_gen),
+    steps_per_epoch=len(train_gen),
+    validation_data=generator_wrapper(test_gen),
+    validation_steps=len(test_gen),
+
+    epochs=5
+)
+
+# 6. Sauvegarder le modèle
+model.save("saved_models/image_captioning_decoder.h5")
