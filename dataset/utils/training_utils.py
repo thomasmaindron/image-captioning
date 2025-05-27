@@ -65,38 +65,3 @@ class CocoDataGenerator(tf.keras.utils.Sequence):
         """
         if self.shuffle:
             np.random.shuffle(self.indices)
-
-def prepare_caption_data(train_filenames, test_filenames, 
-                         train_annotations_path, test_annotations_path,
-                         get_image_id_fn, load_captions_fn):
-    """
-    Prepare caption data for training
-    Args:
-        train_filenames (np.array): Array of training image filenames
-        test_filenames (np.array): Array of test image filenames
-        train_annotations_path (str): Path to training annotations file
-        test_annotations_path (str): Path to test annotations file
-        get_image_id_fn (function): Function to get image ID from filename
-        load_captions_fn (function): Function to load captions from annotation file
-    Returns:
-        tuple: (y_train_multi, y_test_multi) where each element is a list of caption lists
-    """
-    # Charger les captions d'entraînement et de test
-    train_captions_dict = load_captions_fn(train_annotations_path)
-    test_captions_dict = load_captions_fn(test_annotations_path)
-    
-    # Associer les captions aux images d'entraînement
-    y_train_multi = []
-    for filename in train_filenames:
-        image_id = get_image_id_fn(filename)
-        captions = train_captions_dict.get(image_id, [])
-        y_train_multi.append(captions)
-    
-    # Associer les captions aux images de test
-    y_test_multi = []
-    for filename in test_filenames:
-        image_id = get_image_id_fn(filename)
-        captions = test_captions_dict.get(image_id, [])
-        y_test_multi.append(captions)
-    
-    return y_train_multi, y_test_multi

@@ -7,7 +7,7 @@ import sys
 from dataset.utils.image_utils import preprocess_image, is_larger_than
 from dataset.utils.caption_utils import prepare_caption_data, preprocess_captions
 
-def preprocess_folder(input_folder, output_file, sample_ratio=0.1, size=( 224,  224)):
+def preprocess_folder(input_folder, output_file, sample_ratio=0.1, size=(224,  224)):
     """
     Preprocesses a random sample of images from a folder and saves them as a NumPy array
 
@@ -58,7 +58,7 @@ def preprocess_folder(input_folder, output_file, sample_ratio=0.1, size=( 224,  
     # Save the list of filenames
     np.save(f"{os.path.splitext(output_file)[0]}_filenames.npy", np.array(filenames))
     
-    print(f"Processed and saved {len(images_array)} images to {output_file}")
+    print(f"Preprocessed and saved {len(images_array)} images to {output_file}")
 
 def preprocess_dataset():
     """
