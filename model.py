@@ -51,7 +51,6 @@ class ImageCaptioning:
 
         # Construction du modèle complet
         model = tf.keras.Model(inputs=[inputs1, inputs2], outputs=outputs)
-        model.compile(loss='sparse_categorical_crossentropy', optimizer='adam')
         return model
     
     
