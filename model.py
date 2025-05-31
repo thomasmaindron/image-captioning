@@ -1,8 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-
-import json
 from dataset.utils.image_utils import prepare_image_for_model
 
 class ImageCaptioning:

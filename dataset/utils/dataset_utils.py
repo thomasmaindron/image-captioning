@@ -3,11 +3,10 @@ import numpy as np
 import tensorflow as tf
 import os
 import random
-import sys
 from dataset.utils.image_utils import preprocess_image, is_larger_than
 from dataset.utils.caption_utils import prepare_caption_data, preprocess_captions
 
-def preprocess_folder(input_folder, output_file, sample_ratio=0.05, size=(224,  224)):
+def preprocess_folder(input_folder, output_file, sample_ratio=0.2, size=(224,  224)):
     """
     Preprocesses a random sample of images from a folder and saves them as a NumPy array
 

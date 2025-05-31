@@ -2,7 +2,6 @@ import numpy as np
 import tensorflow as tf
 import json
 import os
-import random
 
 def load_captions(annotation_file):
     """
