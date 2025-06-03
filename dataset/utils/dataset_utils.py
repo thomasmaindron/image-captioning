@@ -3,61 +3,39 @@ import numpy as np
 import tensorflow as tf
 import os
 import random
-from dataset.utils.image_utils import preprocess_image, is_larger_than
-from dataset.utils.caption_utils import prepare_caption_data, preprocess_captions
+from dataset.utils.image_utils import preprocess_image
+from dataset.utils.caption_utils import load_captions, clean_captions
 
-def preprocess_folder(input_folder, output_file, sample_ratio=0.2, size=(224,  224)):
-    """
-    Preprocesses a random sample of images from a folder and saves them as a NumPy array
+def preprocess_folder(image_folder, output_file, sample_ratio=0.2, size=(224, 224)):
+    encoder = tf.keras.applications.resnet50.ResNet50(weights='imagenet', include_top=False)
+    features = {}
 
-    Args:
-        input_folder (str): Path to the folder containing images
-        output_file (str): Path to the output .npy file
-        sample_ratio (float): Proportion of images to randomly sample from the folder
-        size (tuple): Target size for image resizing
-
-    Returns:
-        None
-    """
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
-    
-    all_files = [
-        os.path.join(input_folder, f)
-        for f in os.listdir(input_folder)
-        if is_larger_than(os.path.join(input_folder, f), size)
-    ]
-    
+    # Only the names of the images
+    all_files = [f for f in os.listdir(image_folder)]
     sample_size = int(len(all_files) * sample_ratio)
-
     random.seed(42) # Ensures reproducible results
     sampled_files = random.sample(all_files, sample_size)
-    
-    # Preallocate a NumPy array to store all preprocessed images
-    images_array = np.zeros((sample_size, size[0], size[1], 3), dtype=np.uint8)
-    
-    # Store filenames for reference
-    filenames = []
-    
-    for i, image_path in enumerate(sampled_files):
-        try:
-            image = preprocess_image(image_path)
-            images_array[i] = image
-            filenames.append(os.path.basename(image_path))
-            
-            # Show progress every 100 images
-            if (i + 1) % 100 == 0:
-                print(f"Processed {i + 1}/{sample_size} images")
-                
-        except Exception as e:
-            print(f"Error preprocessing {image_path}: {e}")
-    
-    # Save the preprocessed images to a NumPy file
-    np.save(output_file, images_array)
-    
-    # Save the list of filenames
-    np.save(f"{os.path.splitext(output_file)[0]}_filenames.npy", np.array(filenames))
-    
-    print(f"Preprocessed and saved {len(images_array)} images to {output_file}")
+
+    for image_name in(sampled_files):
+        # Construct the full path for the current image
+        image_path = os.path.join(image_folder, image_name)
+
+        image = preprocess_image(image_path)
+
+        # Apply ResNet-specific preprocessing (e.g., pixel scaling)
+        image = tf.keras.applications.resnet.preprocess_input(image)
+
+        # Extract features
+        feature = encoder.predict(image, verbose=0)
+        feature = feature.flatten() # Flatten the 4D feature tensor into a 1D vector
+
+        image_id, _ = image_name.split('.')
+
+        # Store feature
+        features[image_id] = feature
+
+    # Save all the extracted features to a single compressed NumPy file
+    np.savez_compressed(output_file, features) 
 
 def preprocess_dataset():
     """
@@ -69,8 +47,8 @@ def preprocess_dataset():
     Returns:
         None
     """
-    preprocess_folder("dataset/ms_coco_2017/train2017", "dataset/x_train.npy")
-    preprocess_folder("dataset/ms_coco_2017/test2017", "dataset/x_test.npy")
+    preprocess_folder(r"dataset/ms_coco_2017/train2017", r"dataset/x_train.npz")
+    preprocess_folder(r"dataset/ms_coco_2017/test2017", r"dataset/x_test.npz")
 
 def load_coco_dataset():
     """
@@ -83,35 +61,19 @@ def load_coco_dataset():
         tuple: ((x_train, x_test), (y_train, y_test))
     """
     # Load preprocessed images
-    x_train = np.load("dataset/x_train.npy").astype(np.float32) / 255.0
-    x_test = np.load("dataset/x_test.npy").astype(np.float32) / 255.0
-
-    # Load associated filenames
-    train_filenames = np.load("dataset/x_train_filenames.npy")
-    test_filenames = np.load("dataset/x_test_filenames.npy")
-
-    print(test_filenames)
+    x_train = np.load("dataset/x_train.npz")
+    x_test = np.load("dataset/x_test.npz")
 
     # Path to the annotations
     train_annotations = "dataset/ms_coco_2017/annotations/captions_train2017.json"
     test_annotations = "dataset/ms_coco_2017/annotations/captions_val2017.json"
     
-    # Préparer les captions en utilisant caption_utils
-    y_train, y_test = prepare_caption_data(
-        train_filenames, test_filenames, 
-        train_annotations, test_annotations
-    )
+    # Get the captions from the annotations files
+    y_train = load_captions(train_annotations)
+    y_test = load_captions(test_annotations)
 
-    # Add <start> and <end> tokens to captions
-    y_train = preprocess_captions(y_train) 
-    y_test = preprocess_captions(y_test)
-
-    # Convert output to numpy arrays
-    x_train = np.array(x_train)
-    x_test = np.array(x_test)
-    y_train = np.array(y_train)
-    y_test = np.array(y_test)
+    # Clean the captions
+    y_train = clean_captions(y_train)
+    y_test = clean_captions(y_test)
     
     return (x_train, x_test), (y_train, y_test)
-
-
