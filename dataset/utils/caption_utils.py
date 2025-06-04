@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import json
-import re # Import the regular expression module
+import re # Regular expression module
 
 def load_captions(annotation_file):
     """

@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import os
@@ -30,6 +29,7 @@ def preprocess_folder(image_folder, output_file, sample_ratio=0.2, size=(224, 22
         feature = feature.flatten() # Flatten the 4D feature tensor into a 1D vector
 
         image_id, _ = image_name.split('.')
+        image_id = int(image_id) # Conversion to int in order to match how ids are stored in COCO
 
         # Store feature
         features[image_id] = feature
