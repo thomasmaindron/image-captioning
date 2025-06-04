@@ -1,6 +1,8 @@
 import os
 import zipfile
 
+from dataset.utils.dataset_utils import preprocess_dataset
+
 # Destination folder
 os.makedirs("dataset/ms_coco_2017", exist_ok=True)
 
@@ -55,3 +57,6 @@ if not all_exist:
             os.remove(file)
         except OSError:
             pass  # File didn't exist or couldn't be deleted — we ignore it
+
+if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_test.npz"):
+    preprocess_dataset()

@@ -4,9 +4,10 @@ import os
 import random
 from dataset.utils.image_utils import preprocess_image
 from dataset.utils.caption_utils import load_captions, clean_captions
+from tqdm import tqdm
 
 def preprocess_folder(image_folder, output_file, sample_ratio=0.2, size=(224, 224)):
-    encoder = tf.keras.applications.resnet50.ResNet50(weights='imagenet', include_top=False)
+    model = tf.keras.applications.resnet50.ResNet50(weights='imagenet', include_top=False)
     features = {}
 
     # Only the names of the images
@@ -15,27 +16,28 @@ def preprocess_folder(image_folder, output_file, sample_ratio=0.2, size=(224, 22
     random.seed(42) # Ensures reproducible results
     sampled_files = random.sample(all_files, sample_size)
 
-    for image_name in(sampled_files):
+    for image_name in tqdm(sampled_files, desc="Extracting features"):
         # Construct the full path for the current image
         image_path = os.path.join(image_folder, image_name)
 
-        image = preprocess_image(image_path)
+        preprocessed_image = preprocess_image(image_path)
 
         # Apply ResNet-specific preprocessing (e.g., pixel scaling)
-        image = tf.keras.applications.resnet.preprocess_input(image)
+        resnet_image = tf.keras.applications.resnet.preprocess_input(preprocessed_image)
 
         # Extract features
-        feature = encoder.predict(image, verbose=0)
+        feature = model.predict(resnet_image, verbose=0)
         feature = feature.flatten() # Flatten the 4D feature tensor into a 1D vector
 
         image_id, _ = image_name.split('.')
-        image_id = int(image_id) # Conversion to int in order to match how ids are stored in COCO
+        image_id = int(image_id) # Conversion to int in order to match how ids are stored in COCO (remove all the 0 at the beginning)
+        image_id = str(image_id) # Conversion back to str so it can save as .npz
 
         # Store feature
         features[image_id] = feature
 
     # Save all the extracted features to a single compressed NumPy file
-    np.savez_compressed(output_file, features) 
+    np.savez_compressed(output_file, **features) 
 
 def preprocess_dataset():
     """

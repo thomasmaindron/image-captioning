@@ -13,7 +13,8 @@ if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_
 # On a donc len(y_train.keys()) = 5 * len(x_train.keys())
 
 (x_train, x_test), (y_train, y_test) = load_coco_dataset()
-print(x_train["000000411685"].shape[0])
+print(x_train.keys())
+print(x_test.keys())
 
 # Put all captions in a list and print its length
 all_captions = get_all_captions(y_train)

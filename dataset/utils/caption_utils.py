@@ -19,7 +19,7 @@ def load_captions(annotation_file):
     
     # For each annotation in the file
     for annotation in annotations['annotations']:
-        image_id = annotation['image_id']
+        image_id = str(annotation['image_id'])
         caption = annotation['caption']
         
         if image_id not in mapping:
@@ -56,6 +56,6 @@ def get_all_captions(mapping):
 def fit_tokenizer(all_captions):
     tokenizer =  tf.keras.preprocessing.text.Tokenizer()
     tokenizer.fit_on_texts(all_captions)
-    vocab_size = len(tokenizer.word_index) + 1
     max_length = max(len(caption.split()) for caption in all_captions)
-    return tokenizer, vocab_size, max_length
+    vocab_size = len(tokenizer.word_index) + 1
+    return tokenizer, max_length, vocab_size
