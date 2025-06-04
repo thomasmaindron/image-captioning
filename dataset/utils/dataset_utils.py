@@ -50,32 +50,69 @@ def preprocess_dataset():
         None
     """
     preprocess_folder(r"dataset/ms_coco_2017/train2017", r"dataset/x_train.npz")
+    preprocess_folder(r"dataset/ms_coco_2017/val2017", r"dataset/x_val.npz")
     preprocess_folder(r"dataset/ms_coco_2017/test2017", r"dataset/x_test.npz")
 
-def load_coco_dataset():
+def load_training_split_coco():
     """
-    Loads the preprocessed MS COCO 2017 dataset from .npy files
+    Loads the preprocessed training split of MS COCO 2017 dataset from .npz files
 
     Args:
         None
 
     Returns:
-        tuple: ((x_train, x_test), (y_train, y_test))
+        tuple: (x_train, y_train)
     """
     # Load preprocessed images
     x_train = np.load("dataset/x_train.npz")
-    x_test = np.load("dataset/x_test.npz")
 
     # Path to the annotations
     train_annotations = "dataset/ms_coco_2017/annotations/captions_train2017.json"
-    test_annotations = "dataset/ms_coco_2017/annotations/captions_val2017.json"
     
     # Get the captions from the annotations files
     y_train = load_captions(train_annotations)
-    y_test = load_captions(test_annotations)
 
     # Clean the captions
     y_train = clean_captions(y_train)
-    y_test = clean_captions(y_test)
     
-    return (x_train, x_test), (y_train, y_test)
+    return (x_train, y_train)
+
+def load_validation_split_coco():
+    """
+    Loads the preprocessed validation split of MS COCO 2017 dataset from .npz files
+
+    Args:
+        None
+
+    Returns:
+        tuple: (x_val, y_val)
+    """
+    # Load preprocessed images
+    x_val = np.load("dataset/x_val.npz")
+
+    # Path to the annotations
+    val_annotations = "dataset/ms_coco_2017/annotations/captions_val2017.json"
+    
+    # Get the captions from the annotations files
+    y_val = load_captions(val_annotations)
+
+    # Clean the captions
+    y_val = clean_captions(y_val)
+
+
+    return (x_val, y_val)
+
+def load_testing_split_coco():
+    """
+    Loads the preprocessed testing split of MS COCO 2017 dataset from .npz files
+
+    Args:
+        None
+
+    Returns:
+        dict: x_test
+    """
+    # Load preprocessed images
+    x_test = np.load("dataset/x_test.npz")
+    
+    return x_test

@@ -8,9 +8,8 @@ import tensorflow as tf
 # des captions tandis que x_train ne recouvre que 20% des images.
 # On a donc len(y_train.keys()) = 5 * len(x_train.keys())
 
-# (x_train, x_test), (y_train, y_test) = load_coco_dataset()
+# (x_train, y_train) = load_training_split_coco()
 # print(x_train.keys())
-# print(x_test.keys())
 # print(x_train["411685"].shape[0])
 
 # # Put all captions in a list and print its length

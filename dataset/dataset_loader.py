@@ -11,7 +11,7 @@ files = {
     "train2017.zip": ("http://images.cocodataset.org/zips/train2017.zip", "dataset/ms_coco_2017/train2017"),
     "val2017.zip": ("http://images.cocodataset.org/zips/val2017.zip", "dataset/ms_coco_2017/val2017"),
     "test2017.zip": ("http://images.cocodataset.org/zips/test2017.zip", "dataset/ms_coco_2017/test2017"),
-    "annotations_trainval2  017.zip": ("http://images.cocodataset.org/annotations/annotations_trainval2017.zip", "dataset/ms_coco_2017/annotations")
+    "annotations_trainval2017.zip": ("http://images.cocodataset.org/annotations/annotations_trainval2017.zip", "dataset/ms_coco_2017/annotations")
 }
 
 # Download and extract only if necessary
@@ -41,10 +41,8 @@ print("Entire MS COCO 2017 dataset downloaded!")
 
 # Process the dataset only if some .npy files are missing (and delete any partial files if needed)
 files = [
-    "dataset/x_train.npy",
-    "dataset/x_train_filenames.npy",
-    "dataset/x_test.npy",
-    "dataset/x_test_filenames.npy"
+    "dataset/x_train.npz",
+    "dataset/x_val.npz"
 ]
 
 # Checks if all required files exist
@@ -58,5 +56,5 @@ if not all_exist:
         except OSError:
             pass  # File didn't exist or couldn't be deleted — we ignore it
 
-if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_test.npz"):
+if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_val.npz"):
     preprocess_dataset()
