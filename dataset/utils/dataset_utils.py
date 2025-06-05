@@ -16,7 +16,11 @@ def preprocess_folder(image_folder, output_file, sample_ratio=0.2, size=(224, 22
     random.seed(42) # Ensures reproducible results
     sampled_files = random.sample(all_files, sample_size)
 
-    for image_name in tqdm(sampled_files, desc="Extracting features"):
+    # Show which split is currently getting extracted
+    _, _, split_name = image_folder.split('/')
+    split_name = split_name.replace('2017', '') 
+ 
+    for image_name in tqdm(sampled_files, desc=f"Extracting {split_name} features"):
         # Construct the full path for the current image
         image_path = os.path.join(image_folder, image_name)
 
@@ -64,7 +68,7 @@ def load_training_split_coco():
         tuple: (x_train, y_train)
     """
     # Load preprocessed images
-    x_train = np.load("dataset/x_train.npz")
+    x_train = np.load("dataset/x_train.npz", allow_pickle=True)
 
     # Path to the annotations
     train_annotations = "dataset/ms_coco_2017/annotations/captions_train2017.json"
@@ -88,7 +92,7 @@ def load_validation_split_coco():
         tuple: (x_val, y_val)
     """
     # Load preprocessed images
-    x_val = np.load("dataset/x_val.npz")
+    x_val = np.load("dataset/x_val.npz", allow_pickle=True)
 
     # Path to the annotations
     val_annotations = "dataset/ms_coco_2017/annotations/captions_val2017.json"
@@ -113,6 +117,6 @@ def load_testing_split_coco():
         dict: x_test
     """
     # Load preprocessed images
-    x_test = np.load("dataset/x_test.npz")
+    x_test = np.load("dataset/x_test.npz", allow_pickle=True)
     
     return x_test

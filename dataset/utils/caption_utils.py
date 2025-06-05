@@ -1,4 +1,3 @@
-import numpy as np
 import tensorflow as tf
 import json
 import re # Regular expression module
@@ -58,4 +57,10 @@ def fit_tokenizer(all_captions):
     tokenizer.fit_on_texts(all_captions)
     max_length = max(len(caption.split()) for caption in all_captions)
     vocab_size = len(tokenizer.word_index) + 1
+
+    # Save the tokenizer for future predictions
+    tokenizer_json = tokenizer.to_json()
+    with open('tokenizer.json', 'w', encoding='utf-8') as f:
+        f.write(tokenizer_json)
+
     return tokenizer, max_length, vocab_size

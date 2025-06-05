@@ -42,7 +42,8 @@ print("Entire MS COCO 2017 dataset downloaded!")
 # Process the dataset only if some .npy files are missing (and delete any partial files if needed)
 files = [
     "dataset/x_train.npz",
-    "dataset/x_val.npz"
+    "dataset/x_val.npz",
+    "dataset/x_test.npz"
 ]
 
 # Checks if all required files exist
@@ -56,5 +57,5 @@ if not all_exist:
         except OSError:
             pass  # File didn't exist or couldn't be deleted — we ignore it
 
-if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_val.npz"):
+if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_val.npz") or not os.path.exists(r"dataset/x_test.npz"):
     preprocess_dataset()
