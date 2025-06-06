@@ -1,13 +1,17 @@
 import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
-
-def encoder():
-    model = tf.keras.applications.resnet50.ResNet50(weights='imagenet', include_top=False)
-    return model
 
 def decoder(feature_vector_size, max_length, vocab_size):
+    """
+    Create decoder model for caption generation
 
+    Args:
+        feature_vector_size (int): Size of the feature vector (100352 for the flatten output of ResNet50).
+        max_length (int): Max length of a sequence (always this length due to padding).
+        vocab_size (int): Number of words in the tokenizer.
+
+    Returns:
+        tf.keras.Model: Decoder model.
+    """
     # Image feature layers
     inputs1 = tf.keras.layers.Input(shape=(feature_vector_size,))
     fe1 = tf.keras.layers.Dropout(0.4)(inputs1)

@@ -1,7 +1,6 @@
 import os
 import zipfile
-
-from dataset.utils.dataset_utils import preprocess_dataset
+from utils.dataset_utils import preprocess_dataset
 
 # Destination folder
 os.makedirs("dataset/ms_coco_2017", exist_ok=True)
@@ -39,23 +38,24 @@ for filename, (url, extracted_folder) in files.items():
 
 print("Entire MS COCO 2017 dataset downloaded!")
 
-# Process the dataset only if some .npy files are missing (and delete any partial files if needed)
+# Process the dataset only if some .npz files are missing (and delete any partial files if needed)
 files = [
     "dataset/x_train.npz",
     "dataset/x_val.npz",
     "dataset/x_test.npz"
 ]
 
-# Checks if all required files exist
+# Check if all required files exist
 all_exist = all(os.path.exists(f) for f in files)
 
 if not all_exist:
-    # Deletes any that do exist (to avoid mismatched files)
+    # Delete any that do exist (to avoid mismatched files)
     for file in files:
         try:
             os.remove(file)
         except OSError:
             pass  # File didn't exist or couldn't be deleted — we ignore it
 
-if not os.path.exists(r"dataset/x_train.npz") or not os.path.exists(r"dataset/x_val.npz") or not os.path.exists(r"dataset/x_test.npz"):
+# Preprocess only if the features folders don't exist
+if not os.path.exists(r"dataset/features_train") or not os.path.exists(r"dataset/features_val") or not os.path.exists(r"dataset/features_test"):
     preprocess_dataset()

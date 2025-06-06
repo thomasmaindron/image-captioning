@@ -1,69 +1,88 @@
 import numpy as np
 import tensorflow as tf
-from dataset.utils.caption_utils import fit_tokenizer, get_all_captions
-from dataset.utils.dataset_utils import load_coco_dataset
-import json
-
 from dataset.utils.image_utils import preprocess_image
 
 def index_to_word(token, tokenizer):
+    """
+    Convert a numerical token (index) back to its corresponding word using the tokenizer.
+
+    Args:
+        token (int): The numerical index (token) to convert.
+        tokenizer (tf.keras.preprocessing.text.Tokenizer): Tokenizer object
+                                                          
+    Returns:
+        str | None: The word corresponding to the token if found, otherwise None.
+    """
     for word, index in tokenizer.word_index.items():
         if index == token:
             return word
     return None
     
-def caption_generation(model, feature, tokenizer, max_length):
-    # Add start tag for generation process
-    in_text = "<start>"
-
-    # Iterate over the max length of sequence
-    for _ in range(max_length):
-        # Encode input sequence
-        sequence = tokenizer.texts_to_sequences([in_text])[0]
-
-        # Pad the sequence
-        sequence = tf.keras.preprocessing.sequence.pad_sequences([sequence], max_length)
-
-        # Predict the next word
-        predicted_vector = model.predict([feature, sequence], verbose=0)
-
-        # Get index with hight probability
-        predicted_token = np.argmax(predicted_vector) # yhat
-
-        # Convert token to word
-        word = index_to_word(predicted_token, tokenizer)
-
-        # Stop if word not found
-        if word is None:
-            break
-
-        # Append word as input for generating next word
-        predicted_sentence += " " + word
-
-        # Stop if we reach end tag
-        if word == "<end>":
-            break
+def generate_caption_from_feature(image_feature, decoder, tokenizer, max_length):
+    """
+    Generate a caption for a given feature.
     
-    return predicted_sentence
+    Args:
+        image_feature (np.array): Feature vectore of the image.
+        decoder (tf.keras.Model): Trained decoder model.
+        tokenizer (tf.keras.preprocessing.text.Tokenizer): Fitted tokenizer object.
+        max_length (int): Max length of a sequence (always this length due to padding).
+        
+    Returns:
+        str: Predicted caption.
+    """
+    in_text = "<start>"
+    
+    sequence = tokenizer.texts_to_sequences([in_text])[0]
+    sequence = tf.keras.utils.pad_sequences([sequence], maxlen=max_length)[0]
+    
+    # Add 1 dimension to work with Keras functions
+    image_feature = image_feature.reshape(1, -1)
+    sequence = sequence.reshape(1, -1)
 
-def image_captioning(image):
+    for i in range(max_length - 1):
+        predicted_vector = decoder.predict([image_feature, sequence], verbose=0) # one-hot vector
+        
+        predicted_index = np.argmax(predicted_vector) # token predicted
+        predicted_word = tokenizer.index_word.get(predicted_index, None) # word of the corresponding token
+        
+        if predicted_word:
+            in_text += " " + predicted_word
+        
+        if predicted_word == "<end>":
+            break
+            
+        sequence = tokenizer.texts_to_sequences([in_text])[0]
+        sequence = tf.keras.utils.pad_sequences([sequence], maxlen=max_length)[0]
+        sequence = sequence.reshape(1, -1)
+
+    return in_text
+
+def generate_caption_from_image(raw_image_path, encoder, decoder):
+    """
+    Generate a caption for a given image.
+
+    Args:
+        raw_image_path (str): Path to the image file.
+        encoder (tf.keras.Model): Trained encoder model.
+        decoder (tf.keras.Model): Trained decoder model.
+
+    Returns:
+        str: Predicted caption.
+    """
     # Load the tokenizer
-    with open('tokenizer.json') as f:
-        data = json.load(f)
+    with open('tokenizer.json', 'r', encoding='utf-8') as f:
+        data = f.read()
     tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(data)
-    max_length = 0
-    vocab_size = len(tokenizer.word_index) + 1
+    max_length = 49 # HARDCODED : THIS MIGHT CHANGE IF YOU CREATED A NEW TOKENIZER !!!
 
     # Extract the feature from the image
-    encoder = encoder()
-    preprocessed_image = preprocess_image(image)
+    preprocessed_image = preprocess_image(raw_image_path)
     # Apply ResNet-specific preprocessing (e.g., pixel scaling)
     resnet_image = tf.keras.applications.resnet.preprocess_input(preprocessed_image)
     # Extract features
     feature = encoder.predict(resnet_image, verbose=0)
     feature = feature.flatten() # Flatten the 4D feature tensor into a 1D vector
 
-    feature_vector_size = 100352 # 7 x 7 x 2048 : output of ResNet50
-    decoder = decoder(feature_vector_size, vocab_size, max_length)
-    predicted_sentence = caption_generation(decoder, feature, tokenizer, max_length)
-    return predicted_sentence
+    predicted_caption = generate_caption_from_feature(decoder, feature, tokenizer, max_length)
+    return predicted_caption

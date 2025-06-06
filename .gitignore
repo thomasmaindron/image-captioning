@@ -1,6 +1,6 @@
 .venv
 ms_coco_2017
-x_train.npz
-x_val.npz
-x_test.npz
+features_train
+features_val
+features_test
 __pycache__

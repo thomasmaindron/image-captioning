@@ -1,6 +1,4 @@
-import numpy as np
 import tensorflow as tf
-import os
 
 def preprocess_image(image_path, size=(224, 224)):
     """
