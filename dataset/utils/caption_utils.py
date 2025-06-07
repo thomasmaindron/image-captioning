@@ -53,7 +53,7 @@ def clean_captions(mapping):
             # Delete additional spaces
             caption = re.sub(r'\s+', ' ', caption).strip()
             # Add start and end tags to the caption
-            caption = "<start> " + caption + " <end>"
+            caption = "startcaption " + caption + " endcaption"
             
             captions[i] = caption
     return mapping

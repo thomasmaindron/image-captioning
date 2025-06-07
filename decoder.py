@@ -21,10 +21,16 @@ def decoder(feature_vector_size, max_length, vocab_size):
     inputs2 = tf.keras.layers.Input(shape=(max_length,))
     se1 = tf.keras.layers.Embedding(vocab_size, 256, mask_zero=True)(inputs2)
     se2 = tf.keras.layers.Dropout(0.4)(se1)
-    se3 = tf.keras.layers.LSTM(256)(se2)
+
+    # First LSTM layer
+    se3 = tf.keras.layers.LSTM(256, return_sequences=True)(se2)
+    se4 = tf.keras.layers.Dropout(0.5)(se3)
+
+    # Second LSTM layer
+    se5 = tf.keras.layers.LSTM(256, return_sequences=False)(se4)
 
     # Decoder model
-    decoder1 = tf.keras.layers.add([fe2, se3])
+    decoder1 = tf.keras.layers.Concatenate()([fe2, se5])
     decoder2 = tf.keras.layers.Dense(256, activation='relu')(decoder1)
     outputs = tf.keras.layers.Dense(vocab_size, activation='softmax')(decoder2)
 

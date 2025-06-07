@@ -31,7 +31,7 @@ def generate_caption_from_feature(image_feature, decoder, tokenizer, max_length)
     Returns:
         str: Predicted caption.
     """
-    in_text = "<start>"
+    in_text = "startcaption"
     
     sequence = tokenizer.texts_to_sequences([in_text])[0]
     sequence = tf.keras.utils.pad_sequences([sequence], maxlen=max_length)[0]
@@ -49,7 +49,7 @@ def generate_caption_from_feature(image_feature, decoder, tokenizer, max_length)
         if predicted_word:
             in_text += " " + predicted_word
         
-        if predicted_word == "<end>":
+        if predicted_word == "endcaption":
             break
             
         sequence = tokenizer.texts_to_sequences([in_text])[0]
@@ -82,7 +82,7 @@ def generate_caption_from_image(raw_image_path, encoder, decoder):
     resnet_image = tf.keras.applications.resnet.preprocess_input(preprocessed_image)
     # Extract features
     feature = encoder.predict(resnet_image, verbose=0)
-    feature = feature.flatten() # Flatten the 4D feature tensor into a 1D vector
+    image_feature = feature.flatten() # Flatten the 4D feature tensor into a 1D vector
 
-    predicted_caption = generate_caption_from_feature(decoder, feature, tokenizer, max_length)
+    predicted_caption = generate_caption_from_feature(image_feature, decoder, tokenizer, max_length)
     return predicted_caption

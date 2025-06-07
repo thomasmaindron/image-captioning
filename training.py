@@ -5,6 +5,7 @@ from dataset.utils.training_utils import data_generator
 from decoder import decoder
 import math
 import os
+import json
 
 
 # --- START OF GPU MEMORY OPTIMIZATION BLOCK ---
@@ -50,7 +51,7 @@ else:
 feature_vector_size = 100352 # 7 x 7 x 2048 : output of ResNet50
 model = decoder(feature_vector_size, max_length, vocab_size)
 
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 # --- STEPS_PER_EPOCH CALCULATION ---
@@ -81,12 +82,13 @@ dataset_train = dataset_train.prefetch(tf.data.AUTOTUNE)
 
 # --- MODEL TRAINING ---
 epochs = 20
-model.fit(dataset_train, epochs=epochs, steps_per_epoch=steps_per_epoch)
+history = model.fit(dataset_train, epochs=epochs, steps_per_epoch=steps_per_epoch)
 
 
 # --- SAVE THE MODEL ---
-model.save(f"saved_models/{epochs}epochs_image_captioning_decoder.h5")
-
+model.save(f"saved_models/{epochs}_epochs/{epochs}_epochs_decoder.h5")
+with open(f"saved_models/{epochs}_epochs/{epochs}_epochs_history.json"):
+    json.dump(history.history, f)
 
 # à retirer
 print(f"La valeur de max_length est {max_length}")

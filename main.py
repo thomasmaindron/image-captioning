@@ -11,7 +11,7 @@ tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(data)
 max_length = 49 # HARDCODED : THIS MIGHT CHANGE IF YOU CREATED A NEW TOKENIZER !!!
 
 # Load the trained decoder
-decoder = tf.keras.models.load_model("saved_models/image_captioning_decoder.h5") 
+decoder = tf.keras.models.load_model("saved_models/1_epochs/1_epochs_decoder.h5") 
 
 # Prediction on data of validation split
 x_val_dir, y_val = load_split_coco(split="val")
